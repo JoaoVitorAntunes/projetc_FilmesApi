@@ -22,8 +22,14 @@ namespace FilmesApi.Controllers
             _mapper = mapper;
         }
 
-        /* --- [HttpPost] = Metodo que faz a inserção de recursos no sistema --- */
+        /// <summary>
+        /// Adiciona um filme ao banco de dados
+        /// </summary>
+        /// <param name="filmeDto">Objeto com os campos necessários para criação de um filme</param>
+        /// <returns>IActionResult</returns>
+        /// <response code="201">Caso inserção seja feita com sucesso</response>
         [HttpPost]
+        [ProducesResponseType(StatusCodes.Status201Created)]
         public IActionResult AdicionaFilme([FromBody] CreateFilmeDtos filmeDto) 
         {
 
@@ -35,23 +41,18 @@ namespace FilmesApi.Controllers
 
         /* --- [HttpGet] = Metodo que ira fazer a leitura dos recursos do sistema --- */
         [HttpGet]
-        public IEnumerable<Filme> RecuperaFilmes([FromQuery] int skip = 0, [FromQuery] int take = 50)
+        public IEnumerable<ReadFilmeDto> RecuperaFilmes([FromQuery] int skip = 0, [FromQuery] int take = 50)
         {
-            return _context.Filmes.Skip(skip).Take(take);
+            return _mapper.Map<List<ReadFilmeDto>>(_context.Filmes.Skip(skip).Take(take));
         }
 
         [HttpGet("{id}")]
         public IActionResult RecuperaFilmePorId(int id)
         {
             var filme = _context.Filmes.FirstOrDefault(filmes => filmes.Id == id);
-            if(filme == null)
-            {
-                return NotFound();
-            }
-            else
-            {
-                return Ok(filme);
-            }
+            if(filme == null) return NotFound();
+            var filmeDto = _mapper.Map<ReadFilmeDto>(filme);
+            return Ok(filmeDto);
         }
 
         /* --- [HttpPut] = Precisa atualizar todos os campos --- */
@@ -83,6 +84,17 @@ namespace FilmesApi.Controllers
             _mapper.Map(filmeParaAtualizar, filme);
             _context.SaveChanges();
             return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        public IActionResult DeletaFilme(int id)
+        {
+            var filme = _context.Filmes.FirstOrDefault(filme => filme.Id == id);
+            if (filme == null) return NotFound();
+            _context.Remove(filme);
+            _context.SaveChanges();
+            return NoContent();
+
         }
     }
 }
